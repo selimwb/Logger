@@ -16,7 +16,7 @@ Modern .NET 10 uygulamaları için geliştirilmiş yüksek performanslı, asenkr
 Projeyi klonlayıp derleyerek Logger.dll dosyasını doğrudan kendi projelerinize dâhil edebilirsiniz.
 
 1. Projeyi indirin veya klonlayın.  
-2. Terminalde proje dizinindeyken ```bash dotnet build \-c Release ``` komutunu çalıştırın.  
+2. Terminalde proje dizinindeyken ``` dotnet build \-c Release ``` komutunu çalıştırın.  
 3. bin/Release/net10.0/ klasörü içinde oluşan Logger.dll dosyasını kopyalayın.  
 4. Kendi projenizde "Add Project Reference" (veya "Add Reference") seçeneği ile bu DLL'i projenize ekleyin.
 
