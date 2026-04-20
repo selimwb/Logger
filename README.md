@@ -25,7 +25,7 @@ Projeyi klonlayıp derleyerek Logger.dll dosyasını doğrudan kendi projelerini
 ## **Hızlı Başlangıç**
 
 Loglama işlemlerine başlamak oldukça basittir:
-
+``` csharp
 using Logger;
 
 // Logger örneğini al (Singleton)  
@@ -37,11 +37,11 @@ await log.AddLog("Uygulama başarıyla başlatıldı.");
 // Uyarı ve Hata logları  
 await log.AddWarningLog("Hafıza kullanımı %80'in üzerine çıktı.");  
 await log.AddErrorLog("Veritabanı bağlantısı zaman aşımına uğradı.");
-
+```
 ## **Özelleştirme ve Ayarlar**
 
 Kütüphane çalışırken anlık olarak log formatlarını ve davranışlarını değiştirebilirsiniz:
-
+``` csharp
 // Tarih ve mesajı ok işareti ( \> ) ile ayır  
 log.ChangeSplitter(Splitter.Arrow);
 
@@ -57,5 +57,6 @@ log.ChangeFlushTime(5);
 // Uyarı ve Hata öneklerini özelleştir  
 log.ChangeErrorText("FATAL\_ERROR");  
 log.ChangeWarningText("WARN");
+```
 
 **Geliştirici:** Selim Aksakallı
