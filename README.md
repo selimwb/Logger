@@ -1,62 +1,64 @@
+[Türkçe](README.tr.md) | [English](README.md)
+---
 # **Logger**
 
-Modern .NET 10 uygulamaları için geliştirilmiş yüksek performanslı, asenkron ve thread-safe dosya loglama kütüphanesi.
+A high-performance, asynchronous, and thread-safe file logging library built for modern .NET 10 applications.
 
-## **Özellikler**
+## **Features**
 
-* **%100 Asenkron Mimari:** Arka planda System.Threading.Channels kullanarak ana iş parçacığını (main thread) I/O işlemleriyle yormaz.  
-* **Thread-Safe:** Singleton tasarım deseni ile çoklu thread ortamlarında çakışma olmadan güvenle çalışır.  
-* **Otomatik Dosya Rotasyonu:** Belirlenen maksimum dosya boyutuna ulaşıldığında aktif log dosyasını arşivler ve yeni bir dosya üzerinden devam eder.  
-* **Dinamik Flush Kontrolü:** Logların diske yazılma aralığını saniye cinsinden özelleştirebilme imkanı.  
-* **Zengin Format Desteği:** ISO 8601 dâhil 7 farklı tarih formatı ve log mesajlarını ayırmak için 8 farklı ayırıcı (Splitter) seçeneği.  
-* **Kalıcı Ayarlar:** Yapılandırmalar JSON formatında otomatik olarak diske (logSettings.dat) kaydedilir ve uygulamanın sonraki açılışlarında geri yüklenir.
+* **100% Asynchronous Architecture:** Uses System.Threading.Channels in the background, ensuring the main thread is never blocked by I/O operations.  
+* **Thread-Safe:** Utilizes the Singleton design pattern to work safely in multi-threaded environments without race conditions.  
+* **Automatic File Rotation:** Archives the active log file and continues with a new one once the specified maximum file size is reached.  
+* **Dynamic Flush Control:** Ability to customize the disk write (flush) interval in seconds.  
+* **Rich Format Support:** 7 different date formats (including ISO 8601\) and 8 different separator (Splitter) options for log messages.  
+* **Persistent Settings:** Configurations are automatically saved to disk (logSettings.dat) in JSON format and restored upon the next application startup.
 
-## **Kurulum**
+## **Installation**
 
-Projeyi klonlayıp derleyerek Logger.dll dosyasını doğrudan kendi projelerinize dâhil edebilirsiniz.
+You can clone the repository, build the project, and directly include the Logger.dll in your projects.
 
-1. Projeyi indirin veya klonlayın.  
-2. Terminalde proje dizinindeyken ``` dotnet build \-c Release ``` komutunu çalıştırın.  
-3. bin/Release/net10.0/ klasörü içinde oluşan Logger.dll dosyasını kopyalayın.  
-4. Kendi projenizde "Add Project Reference" (veya "Add Reference") seçeneği ile bu DLL'i projenize ekleyin.
+1. Download or clone the project.  
+2. Run the ```dotnet build -c Release``` command in the terminal at the project directory.  
+3. Copy the Logger.dll file generated inside the bin/Release/net10.0/ folder.  
+4. Add this DLL to your project using the "Add Project Reference" (or "Add Reference") option.
 
-*(Alternatif olarak sağ taraftaki **Releases** bölümünden derlenmiş en güncel DLL sürümünü indirebilirsiniz.)*
+*(Alternatively, you can download the latest compiled DLL version from the **Releases** section on the right.)*
 
-## **Hızlı Başlangıç**
+## **Quick Start**
 
-Loglama işlemlerine başlamak oldukça basittir:
+Starting to log is quite simple:
 ``` csharp
 using Logger;
 
-// Logger örneğini al (Singleton)  
-var log \= Log.GetLogger();
+// Get the Logger instance (Singleton)  
+var log = Log.GetLogger();
 
-// Standart log ekleme  
-await log.AddLog("Uygulama başarıyla başlatıldı.");
+// Standard log entry  
+await log.AddLog("Application started successfully.");
 
-// Uyarı ve Hata logları  
-await log.AddWarningLog("Hafıza kullanımı %80'in üzerine çıktı.");  
-await log.AddErrorLog("Veritabanı bağlantısı zaman aşımına uğradı.");
+// Warning and Error logs  
+await log.AddWarningLog("Memory usage exceeded 80%.");  
+await log.AddErrorLog("Database connection timed out.");
 ```
-## **Özelleştirme ve Ayarlar**
 
-Kütüphane çalışırken anlık olarak log formatlarını ve davranışlarını değiştirebilirsiniz:
+## **Customization and Settings**
+
+You can change the log formats and behaviors on the fly while the library is running:
 ``` csharp
-// Tarih ve mesajı ok işareti ( \> ) ile ayır  
+// Separate the date and message with an arrow ( > )  
 log.ChangeSplitter(Splitter.Arrow);
 
-// Tarih formatını ISO 8601 olarak ayarla (örn: 2026-04-20 20:45:04)  
+// Set the date format to ISO 8601 (e.g., 2026-04-20 20:45:04)  
 log.ChangeDateFormat(DateFormat.Iso8601DateTime);
 
-// 10 MB (10485760 bytes) sınırına ulaşıldığında dosyayı arşivle  
+// Archive the file when it reaches 10 MB (10485760 bytes)  
 log.ChangeFileSize(10485760);
 
-// Logları diske her 5 saniyede bir yaz (Flush)  
+// Write (flush) logs to disk every 5 seconds  
 log.ChangeFlushTime(5);
 
-// Uyarı ve Hata öneklerini özelleştir  
-log.ChangeErrorText("FATAL\_ERROR");  
+// Customize the Error and Warning prefixes  
+log.ChangeErrorText("FATAL_ERROR");  
 log.ChangeWarningText("WARN");
 ```
-
-**Geliştirici:** Selim Aksakallı
+**Developer:** Selim Aksakallı
