@@ -9,26 +9,84 @@ namespace Logger
     /// </summary>
     public class Log : IDisposable
     {
-        private static readonly Lazy<Log> _lazy = new(() => new Log());
+        private static Log? _instance;
+        private static readonly object _lock = new();
 
-        private string _settingsLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Logger", "logSettings.dat");
         private FileStream _stream;
         private Channel<string> _logChannel = Channel.CreateUnbounded<string>();
         private Task _worker;
         private Stopwatch _stopWatch = new();
 
-        private TimeSpan _flushInterval;
         private Splitter _splitter;
         private DateFormat _dateFormat;
+        private TimeSpan _flushInterval;
+
         private string _error;
         private string _warning;
         private string _fileLocation;
+        private string _defaultLogLocation;
+        private string _settingsLocation;
+
         private long _maxFileSizeBytes;
 
-        private Log()
+        /// <summary>
+        /// Gets the prefix text applied to error logs.
+        /// </summary>
+        public string ErrorPrefix => _error;
+
+        /// <summary>
+        /// Gets the prefix text applied to warning logs.
+        /// </summary>
+        public string WarningPrefix => _warning;
+
+        /// <summary>
+        /// Gets the current splitter symbol used between the timestamp and the message.
+        /// </summary>
+        public Splitter LogSplitter => _splitter;
+
+        /// <summary>
+        /// Gets the current date formatting used in the logs.
+        /// </summary>
+        public DateFormat LogDateFormat => _dateFormat;
+
+        /// <summary>
+        /// Gets the interval at which the log buffer is flushed to the physical file.
+        /// </summary>
+        public TimeSpan FlushInterval => _flushInterval;
+
+        /// <summary>
+        /// Gets the full path of the current active log file.
+        /// </summary>
+        public string FileLocation => _fileLocation;
+
+        /// <summary>
+        /// Gets the default path where the log file is created initially within the AppData directory.
+        /// </summary>
+        public string DefaultLogLocation => _defaultLogLocation;
+
+        /// <summary>
+        /// Gets the full path where the logger configuration settings are stored in JSON format.
+        /// </summary>
+        public string SettingsLocation => _settingsLocation;
+
+        /// <summary>
+        /// Gets the maximum allowed file size in bytes before a log rotation occurs. Returns 0 if unlimited.
+        /// </summary>
+        public long MaxFileSizeBytes => _maxFileSizeBytes;
+
+        private Log(string appName)
         {
+            string appDataDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                appName);
+
+            Directory.CreateDirectory(appDataDir);
+
+            _settingsLocation = Path.Combine(appDataDir, "logSettings.dat");
+            _defaultLogLocation = Path.Combine(appDataDir, "log.txt");
+
             ReadSettings();
-			
+
             if (!File.Exists(_fileLocation))
             {
                 File.WriteAllText(_fileLocation, "-- log file created by selim_wb --" + CreatePattern("Log file created."));
@@ -42,10 +100,28 @@ namespace Logger
         }
 
         /// <summary>
-        /// Gets the singleton instance of the Logger.
+        /// Gets the singleton instance of the Logger. Initializes a new instance if it doesn't exist.
         /// </summary>
+        /// <param name="appName">The name of the application. Used to create a dedicated directory in the system's AppData folder for storing logs and settings.</param>
         /// <returns>The active Log instance.</returns>
-        public static Log GetLogger() => _lazy.Value;
+        public static Log GetLogger(string appName)
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    _instance ??= new Log(appName);
+                }
+            }
+#if DEBUG
+            else if (_instance._settingsLocation.Contains(appName) == false)
+            {
+                Console.WriteLine($"[WARNING] Logger already initialized. '{appName}' ignored.");
+            }
+#endif
+
+            return _instance;
+        }
 
         /// <summary>
         /// Adds a standard informational log message to the queue.
@@ -98,7 +174,7 @@ namespace Logger
                 }
             }
 
-            _fileLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Logger", "log.txt");
+            _fileLocation = _defaultLogLocation;
             _flushInterval = TimeSpan.FromSeconds(3);
             _splitter = Splitter.Dash;
             _dateFormat = DateFormat.DateTimeWithMilliseconds;
@@ -140,6 +216,23 @@ namespace Logger
 
             _stream.Flush();
             _stream.Dispose();
+        }
+
+        /// <summary>
+        /// Returns a formatted string containing the current configuration details of the logger.
+        /// </summary>
+        /// <returns>A string representation of the logger's settings.</returns>
+        public override string ToString()
+        {
+            return $"[Logger Info]\n" +
+                   $"  App Data Directory   : {Path.GetDirectoryName(_settingsLocation)}\n" +
+                   $"  Log File Location    : {_fileLocation}\n" +
+                   $"  Date Format          : {_dateFormat} [{AddDate(_dateFormat)}]\n" +
+                   $"  Splitter             : {_splitter} [{AddSplitter(_splitter)}]\n" +
+                   $"  Flush Interval       : {_flushInterval.TotalSeconds} seconds\n" +
+                   $"  Maximum File Size    : {(_maxFileSizeBytes == 0 ? "Unlimited" : $"{_maxFileSizeBytes / 1024 * 1024} MB")}\n" +
+                   $"  Error Prefix         : [{_error}]\n" +
+                   $"  Warning Prefix       : [{_warning}]";
         }
 
         private async Task ProcessLogsAsync()
@@ -267,8 +360,8 @@ namespace Logger
             try
             {
                 var s = new Settings();
-				s.MaxFileSizeBytes = maxSizeBytes;
-				_maxFileSizeBytes = (long)s.MaxFileSizeBytes!;
+                s.MaxFileSizeBytes = maxSizeBytes;
+                _maxFileSizeBytes = (long)s.MaxFileSizeBytes!;
 
                 SaveSettings();
             }
@@ -282,7 +375,7 @@ namespace Logger
         /// Safely moves the active log file to a new location and resumes logging.
         /// </summary>
         /// <param name="fileLocation">The full path of the new file location.</param>
-		/// <exception cref="IOException">Thrown when the file cannot be moved. The logger will be in an unusable state.</exception>
+        /// <exception cref="IOException">Thrown when the file cannot be moved. The logger will be in an unusable state.</exception>
         public void ChangeFileLocation(string fileLocation)
         {
             _logChannel.Writer.Complete();
