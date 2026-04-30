@@ -89,7 +89,7 @@ namespace Logger
 
             if (!File.Exists(_fileLocation))
             {
-                File.WriteAllText(_fileLocation, "-- log file created by selim_wb --" + CreatePattern("Log file created."));
+                File.WriteAllText(_fileLocation, "-- log file created by selim_wb --");
             }
 
             _stream = new FileStream(_fileLocation, FileMode.Append, FileAccess.Write, FileShare.Read);
