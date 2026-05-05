@@ -186,13 +186,31 @@ namespace Logger
 
         private void SaveSettings()
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_settingsLocation)!);
-
-            if (File.Exists(_settingsLocation))
+            var dir = Path.GetDirectoryName(_settingsLocation);
+            if (!string.IsNullOrEmpty(dir))
             {
-                File.Delete(_settingsLocation);
+                Directory.CreateDirectory(dir);
             }
-            File.WriteAllText(_settingsLocation, JsonSerializer.Serialize<Settings>(new Settings(_fileLocation, _error, _warning, _dateFormat, _splitter, _flushInterval, _maxFileSizeBytes)));
+
+            var settings = new Settings(
+                _fileLocation,
+                _error,
+                _warning,
+                _dateFormat,
+                _splitter,
+                _flushInterval,
+                _maxFileSizeBytes
+            );
+
+            var jsonOptions = JsonSerializer.Serialize(settings, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                AllowDuplicateProperties = false
+            });
+
+            var tempFile = _settingsLocation + ".tmp";
+            File.WriteAllText(tempFile, jsonOptions);
+            File.Move(tempFile, _settingsLocation, true);
         }
 
         /// <summary>
